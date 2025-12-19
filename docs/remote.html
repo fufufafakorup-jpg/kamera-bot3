@@ -1,37 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>REMOTE CENTER</title>
+    <title>REMOTE V6</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background:#111; color:#fff; text-align:center; font-family:sans-serif; padding-top:50px; }
-        button { width:200px; padding:20px; margin:10px; border-radius:15px; border:none; font-weight:bold; cursor:pointer; }
-        .on { background:#2ecc71; } .off { background:#e74c3c; }
+        body { background:#111; color:#fff; text-align:center; padding-top:50px; font-family:sans-serif; }
+        button { width:200px; padding:20px; margin:10px; border-radius:15px; border:none; font-weight:bold; cursor:pointer; font-size:18px; }
+        .on { background:#2ecc71; box-shadow: 0 0 15px #2ecc71; } 
+        .off { background:#e74c3c; box-shadow: 0 0 15px #e74c3c; }
     </style>
 </head>
 <body>
-    <h2>🎮 DIRECT COMMANDER</h2>
+    <h2>🎮 COMMAND CENTER</h2>
     <p id="stat">Mencari HP Anak...</p>
-    <button class="on" onclick="kirim('ON')">SENTER ON</button><br>
-    <button class="off" onclick="kirim('OFF')">SENTER OFF</button>
+    <button class="on" onclick="kirim('ON')">NYALAKAN SENTER</button><br>
+    <button class="off" onclick="kirim('OFF')">MATIKAN SENTER</button>
 
     <script>
         const KUNCI_REMOT = "hayabusa_remote_anak_123";
         const peer = new Peer();
         let koneksi;
 
-        peer.on('open', () => {
+        function hubungkan() {
             koneksi = peer.connect(KUNCI_REMOT);
             koneksi.on('open', () => {
                 document.getElementById('stat').innerText = "TERHUBUNG KE HP ANAK ✅";
             });
-        });
+        }
+
+        // Jalankan koneksi otomatis saat buka halaman
+        peer.on('open', () => { hubungkan(); });
 
         function kirim(cmd) {
             if (koneksi && koneksi.open) {
                 koneksi.send(cmd);
             } else {
-                alert("Belum terhubung! Pastikan HP anak sudah klik Aktifkan.");
+                hubungkan(); // Re-connect jika putus
+                alert("Mencoba menghubungkan ulang... Tunggu 2 detik.");
             }
         }
     </script>
