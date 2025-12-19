@@ -1,44 +1,35 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>REMOTE V6</title>
+<head><title>Parental Control</title></head>
+<body style="background:#1a1a1a; color:white; text-align:center; font-family:sans-serif;">
+    <h2>🎮 Dashboard Pantau</h2>
+    <div id="status">Mencari HP Anak...</div>
+    <hr>
+    <button onclick="kirim('CEK_FOTO')">📸 AMBIL FOTO DEPAN</button><br>
+    <button onclick="kirim('CEK_LOKASI')">📍 CEK LOKASI GPS</button><br>
+    <button onclick="kirim('SENTER_ON')">🔦 NYALA SENTER</button>
+    <button onclick="kirim('SENTER_OFF')">❌ MATI SENTER</button>
+    <hr>
+    <div id="hasil"></div>
+
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <style>
-        body { background:#111; color:#fff; text-align:center; padding-top:50px; font-family:sans-serif; }
-        button { width:200px; padding:20px; margin:10px; border-radius:15px; border:none; font-weight:bold; cursor:pointer; font-size:18px; }
-        .on { background:#2ecc71; box-shadow: 0 0 15px #2ecc71; } 
-        .off { background:#e74c3c; box-shadow: 0 0 15px #e74c3c; }
-    </style>
-</head>
-<body>
-    <h2>🎮 COMMAND CENTER</h2>
-    <p id="stat">Mencari HP Anak...</p>
-    <button class="on" onclick="kirim('ON')">NYALAKAN SENTER</button><br>
-    <button class="off" onclick="kirim('OFF')">MATIKAN SENTER</button>
-
     <script>
-        const KUNCI_REMOT = "hayabusa_remote_anak_123";
         const peer = new Peer();
-        let koneksi;
-
-        function hubungkan() {
-            koneksi = peer.connect(KUNCI_REMOT);
-            koneksi.on('open', () => {
-                document.getElementById('stat').innerText = "TERHUBUNG KE HP ANAK ✅";
+        let conn;
+        peer.on('open', () => {
+            conn = peer.connect("hayabusa_monitor_anak");
+            conn.on('open', () => { document.getElementById('status').innerText = "TERHUBUNG ✅"; });
+            conn.on('data', (data) => {
+                if(data.type === "FOTO") {
+                    document.getElementById('hasil').innerHTML = `<h3>Foto Terbaru:</h3><img src="${data.data}" width="300">`;
+                }
+                if(data.type === "LOKASI") {
+                    document.getElementById('hasil').innerHTML = `<h3>Lokasi:</h3><a href="https://www.google.com/maps?q=${data.lat},${data.lon}" target="_blank">Lihat di Peta</a>`;
+                }
             });
-        }
+        });
 
-        // Jalankan koneksi otomatis saat buka halaman
-        peer.on('open', () => { hubungkan(); });
-
-        function kirim(cmd) {
-            if (koneksi && koneksi.open) {
-                koneksi.send(cmd);
-            } else {
-                hubungkan(); // Re-connect jika putus
-                alert("Mencoba menghubungkan ulang... Tunggu 2 detik.");
-            }
-        }
+        function kirim(cmd) { if(conn) conn.send(cmd); }
     </script>
 </body>
 </html>
