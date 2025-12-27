@@ -3,56 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Verifikasi Hayabusa</title>
-    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
+    <title>Lihat Alamat IP Saya</title>
     <style>
-        body { background-color: #121212; color: #00ff00; font-family: 'Courier New', monospace; text-align: center; padding: 50px 20px; }
-        .box { border: 2px solid #00ff00; border-radius: 10px; padding: 30px; max-width: 400px; margin: 0 auto; box-shadow: 0 0 20px #00ff00; }
-        .btn { background: #00ff00; color: black; padding: 15px 30px; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; }
-        .loader { display: none; margin-top: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        #ip-address {
+            font-size: 2em;
+            font-weight: bold;
+            color: #28a745;
+            margin-top: 15px;
+            word-break: break-all; /* Untuk IP yang sangat panjang */
+        }
+        .loading {
+            color: #6c757d;
+        }
+        .error {
+            color: #dc3545;
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>🛡️ SECURITY CHECK</h2>
-        <p>Verifikasi identitas perangkat diperlukan untuk akses grup ini.</p>
-        <div id="ui">
-            <button class="btn" onclick="verify()">KONFIRMASI PERANGKAT</button>
-        </div>
-        <div id="loader" class="loader">
-            <p>Scanning Hardware ID...</p>
-            <p id="progress">[..........]</p>
-        </div>
+    <div class="container">
+        <h1>Alamat IP Publik Anda:</h1>
+        <p>Ini adalah alamat IP yang terlihat oleh internet.</p>
+        <p id="ip-address" class="loading">Memuat...</p>
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userid');
-        const chatId = urlParams.get('chatid');
+        // Fungsi untuk mengambil dan menampilkan IP
+        async function getPublicIp() {
+            const ipAddressElement = document.getElementById('ip-address');
+            ipAddressElement.textContent = 'Memuat...';
+            ipAddressElement.className = 'loading'; // Reset class
 
-        function verify() {
-            document.getElementById('ui').style.display = 'none';
-            document.getElementById('loader').style.display = 'block';
-            
-            FingerprintJS.load().then(fp => fp.get()).then(result => {
-                const deviceId = result.visitorId;
-                const botToken = "8373626378:AAHmCRe_FCCDug1yrlsnat6WFhi71Qf6lQI";
-
-                // Kirim perintah rahasia ke bot
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=/process_verif ${userId} ${deviceId}`)
-                .then(() => {
-                    let p = 0;
-                    let interval = setInterval(() => {
-                        p += 10;
-                        document.getElementById('progress').innerText = "[" + "#".repeat(p/10) + ".".repeat(10-p/10) + "]";
-                        if(p >= 100) {
-                            clearInterval(interval);
-                            document.body.innerHTML = "<h1>✅ VERIFIKASI BERHASIL</h1><p>Silakan kembali ke Telegram.</p>";
-                        }
-                    }, 200);
-                });
-            });
+            try {
+                // Menggunakan API ipify.org untuk mendapatkan IP dalam format JSON
+                const response = await fetch('https://api.ipify.org?format=json');
+                
+                // Memeriksa apakah respons berhasil (status 200 OK)
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Menampilkan IP yang didapat
+                ipAddressElement.textContent = data.ip;
+                ipAddressElement.className = ''; // Hapus class loading/error
+            } catch (error) {
+                // Menangani kesalahan jika gagal mengambil IP
+                console.error('Gagal mengambil alamat IP:', error);
+                ipAddressElement.textContent = 'Gagal memuat alamat IP.';
+                ipAddressElement.className = 'error';
+            }
         }
+
+        // Panggil fungsi saat halaman selesai dimuat
+        window.addEventListener('load', getPublicIp);
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lihat Alamat IP Saya (Teks Biasa)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        #ip-address-plain {
+            font-size: 2em;
+            font-weight: bold;
+            color: #28a745;
+            margin-top: 15px;
+            word-break: break-all;
+        }
+        .loading {
+            color: #6c757d;
+        }
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Alamat IP Publik Anda:</h1>
+        <p>Ini adalah alamat IP yang terlihat oleh internet.</p>
+        <p id="ip-address-plain" class="loading">Memuat...</p>
+    </div>
+
+    <script>
+        async function getPublicIpPlain() {
+            const ipAddressElement = document.getElementById('ip-address-plain');
+            ipAddressElement.textContent = 'Memuat...';
+            ipAddressElement.className = 'loading';
+
+            try {
+                // Menggunakan API icanhazip.com yang mengembalikan IP dalam format teks biasa
+                const response = await fetch('https://icanhazip.com/');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.text(); // Menggunakan .text() karena responsnya teks biasa
+                
+                // Menampilkan IP yang didapat, menggunakan .trim() untuk menghapus spasi ekstra
+                ipAddressElement.textContent = data.trim();
+                ipAddressElement.className = '';
+            } catch (error) {
+                console.error('Gagal mengambil alamat IP:', error);
+                ipAddressElement.textContent = 'Gagal memuat alamat IP.';
+                ipAddressElement.className = 'error';
+            }
+        }
+
+        window.addEventListener('load', getPublicIpPlain);
     </script>
 </body>
 </html>
